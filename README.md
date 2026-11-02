@@ -34,7 +34,8 @@ Measured on this host (Windows 11 + WSL2 Ubuntu, 16 cores, g++ 13.3):
     layer        claim                                  number        verdict
     L1 kernel    jitter vs a 1 kHz cycle budget        146543 us     MISSES (WSL2)
     L2 network   sync error -> contour error            36 ns -> 22 nm   modelled
-    L3 vision    MVTec-AD, 20 normal images            bottle 90%, screw 20%, carpet 33%   FAILS
+    L3 vision    MVTec-AD, random features            bottle 75%, screw 20%, carpet 33%   FAILS
+    L3 vision    MVTec-AD, ResNet-18 backbone, 8 cats  99.8 / 96.3 / 51.8 ... mean 79.1%   measured
     L3 vision    synthetic parts, 2 normal samples     98.7% at 10% FA  measured
     L4 control   feedforward 1.0 vs 0.0, clean plant   0.758 vs 38.853 mm   measured
     L4 control   same, with backlash                  259.9 vs 273.8 mm    measured, 1.1x
@@ -47,19 +48,39 @@ machine and `docs/GAPS.md` says what would demonstrate it.
 
 The L3 and L4 rows are the ones that changed after the data arrived.
 
-L3 on real data fails. The same method that detects a defect from two synthetic samples gets
-90% AUROC on bottle, 20% on screw and 33% on carpet -- below chance. Two experiments in
+L3 on real data failed with random features. The same method that detects a defect from two
+synthetic samples got 75% AUROC on bottle, 20% on screw and 33% on carpet -- below chance. Two experiments in
 `scripts/` establish that this is structural, not tuning: sweeping five aggregation
 statistics does not rescue it, and aligning every image to the training mean (+-3, +-6 and
 +-12 px searches) moves bottle from 90 to 93 and leaves the other two flat. Random
-convolutional features carry no semantics; a pretrained backbone is what supplies them, and
-not pulling one in was a deliberate choice that turns out to cost the whole layer.
+convolutional features carry no semantics.
+
+So the next run changed exactly one thing -- the features now come from an ImageNet-trained
+ResNet-18, with layers 1/2/3 concatenated, 100 channels, per-position diagonal Gaussian and a
+99th-percentile image score. Eight categories, 20 training images each:
+
+    bottle 99.8   carpet 96.3   toothbrush 91.7   hazelnut 88.3
+    metal_nut 77.6   grid 68.3   pill 59.0   screw 51.8      mean 79.1%
+
+`results/mvtec.json` holds all of it, `rtforge/vision/padim.py` reproduces it, and the
+scripts beside `diag_auroc.py` show why the aggregation and the resolution are not the reason
+screw stays at chance. The published PaDiM number is ~97.5% mean over all 15 categories; this
+is 79.1% over 8 of them, so it is a ceiling being approached, not matched, and the README does
+not round it up to "MVTec-AD performance".
 
 L4 is the same story in a different shape. Feedforward buys a factor of 51 against a clean
 plant and a factor of 1.0 once the plant has a deadband or a bending mode: `tau = M ddq +
 C dq + g` cancels exactly what the model contains, and a deadband and a flex mode are not in
 the model. The honest version of "hand-written dynamics beats a PD follower" is therefore
 narrower than the first run suggested, and both runs are in `results/tracking.json`.
+
+The obvious next fix -- a disturbance observer estimating the torque the plant applies that
+the model did not predict -- was implemented and measured, and it does not work here: exactly
+1.00x on backlash, 1.00x on flex, and 4.5x WORSE on friction. The reason is in the numbers:
+an observer estimates a torque, and a deadband is not a torque error, so the observer
+integrates the mismatch and drives torque into the gap, which overshoots the instant the gap
+is crossed. Both experiments are kept in the tree behind `--dob`, off by default, because a
+negative result that can be re-run beats one that was quietly deleted.
 
 ## The layers
 

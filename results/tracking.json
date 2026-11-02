@@ -34,5 +34,34 @@
     }
   ],
   "reading": "Feedforward cancels what the model contains. It cannot cancel a deadband (backlash) or a mode the model does not have (flex): those need either a stiffer mechanism or an observer that estimates the unmodelled state. The friction row is the one case where feedforward still helps, and it is the only perturbation the model has any term for at all.",
-  "caveat": "backlash magnitude 0.05 deg is a typical harmonic-drive figure; at 3.2 m/s tip speed it dominates because the arm reverses direction 60 times a second at this trajectory. A slower trajectory would show a much smaller number. The comparison across rows is what matters, not the absolute mm."
+  "caveat": "backlash magnitude 0.05 deg is a typical harmonic-drive figure; at 3.2 m/s tip speed it dominates because the arm reverses direction 60 times a second at this trajectory. A slower trajectory would show a much smaller number. The comparison across rows is what matters, not the absolute mm.",
+  "dob": {
+    "what": "disturbance observer on top of the feedforward: estimate the torque the plant applies that the model did not predict, low-pass it, subtract it",
+    "result": [
+      {
+        "scenario": "backlash only",
+        "no_dob_mm": 259.87,
+        "dob_5ms_mm": 259.88
+      },
+      {
+        "scenario": "flex only",
+        "no_dob_mm": 47.76,
+        "dob_5ms_mm": 47.76
+      },
+      {
+        "scenario": "friction asymmetry",
+        "no_dob_mm": 0.55,
+        "dob_5ms_mm": 2.48
+      },
+      {
+        "scenario": "all three",
+        "no_dob_mm": 258.94,
+        "dob_5ms_mm": 259.94
+      }
+    ],
+    "why_it_fails": "A disturbance observer estimates a TORQUE. Backlash is not a torque error: inside the deadband the output does not move no matter what torque is applied, so the observer sees a large mismatch, integrates it, and applies more torque into the gap -- which produces overshoot the instant the gap is crossed. The flex mode is a state the observer's model does not have, and the observer's low-pass is slower than the mode. Both therefore come out at exactly 1.00x.",
+    "why_friction_got_worse": "Friction is the one case the observer can in principle see, and it still worsened 4.5x: the observer's torque is 5 ms behind, the trajectory reverses direction 60 times a second, so the correction is anti-phase about half the time. A faster observer would chase encoder quantisation instead.",
+    "honest_conclusion": "On this plant, the disturbance observer is not a fix. What would be a fix, and is not implemented: a backlash-inverse model before the controller, or a stiffer joint. Both are mechanical/model changes, not control-loop changes.",
+    "kept_because": "the code stays in the tree with the flag off by default, because a negative result that can be re-run is worth more than a removed experiment"
+  }
 }

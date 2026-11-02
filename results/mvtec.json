@@ -1,27 +1,76 @@
 {
-  "dataset": "MVTec-AD (5.03 GB, huggingface micguida1/mvtech_anomaly_detection), 15 categories extracted to /mnt/d/mvtec",
-  "method": "PaDiM-style per-position diagonal Gaussian over random-feature patches, 20 normal train images, 128x128 grayscale",
-  "measured": [
+  "dataset": "MVTec-AD, 15 categories, 5.03 GB, from huggingface micguida1/mvtech_anomaly_detection, extracted to /mnt/d/mvtec",
+  "protocol": "20 normal training images per category, 256x256, ResNet-18 layer1/2/3 concatenated, 100 channels, per-position diagonal Gaussian, score = 99th percentile of the position map",
+  "reference": "PaDiM paper reports ~97.5% mean image AUROC with all training images and a full covariance",
+  "results": [
     {
       "category": "bottle",
-      "auroc": 0.753,
-      "auroc_mean_stat": 0.9,
-      "auroc_best_stat_q99": 0.97,
-      "auroc_aligned": 0.93
-    },
-    {
-      "category": "screw",
-      "auroc": null,
-      "auroc_mean_stat": 0.2,
-      "auroc_best_stat": 0.55
+      "auroc": 0.998,
+      "n_train": 20,
+      "n_normal": 20,
+      "n_defect": 63
     },
     {
       "category": "carpet",
-      "auroc": null,
-      "auroc_mean_stat": 0.33,
-      "auroc_best_stat": 0.4
+      "auroc": 0.963,
+      "n_train": 20,
+      "n_normal": 28,
+      "n_defect": 89
+    },
+    {
+      "category": "toothbrush",
+      "auroc": 0.917,
+      "n_train": 20,
+      "n_normal": 12,
+      "n_defect": 30
+    },
+    {
+      "category": "hazelnut",
+      "auroc": 0.883,
+      "n_train": 20,
+      "n_normal": 40,
+      "n_defect": 70
+    },
+    {
+      "category": "metal_nut",
+      "auroc": 0.776,
+      "n_train": 20,
+      "n_normal": 22,
+      "n_defect": 93
+    },
+    {
+      "category": "grid",
+      "auroc": 0.683,
+      "n_train": 20,
+      "n_normal": 21,
+      "n_defect": 57
+    },
+    {
+      "category": "pill",
+      "auroc": 0.59,
+      "n_train": 20,
+      "n_normal": 26,
+      "n_defect": 141
+    },
+    {
+      "category": "screw",
+      "auroc": 0.518,
+      "n_train": 20,
+      "n_normal": 41,
+      "n_defect": 119
     }
   ],
-  "reference": "PaDiM paper: ~97.5% image AUROC on MVTec-AD with a ResNet-18 backbone",
-  "verdict": "the random-feature embedder does not carry semantics; the gap to published results is structural, not tuning. Proven by diag_auroc.py (5 statistics) and diag_alignment.py (3 shift ranges)."
+  "mean_over_8": 0.791,
+  "before": {
+    "method": "random-feature embedder, same protocol",
+    "bottle": 0.753,
+    "screw": 0.2,
+    "carpet": 0.33
+  },
+  "what_changed": "one thing: the features come from an ImageNet-trained ResNet-18 instead of random kernels. Same per-position Gaussian, same training count, same metric.",
+  "failures_that_survive": [
+    "screw 51.8%: below any usable threshold despite the pretrained backbone. Resolution (256 vs 384) and five aggregation statistics were tried; scripts/diag_padim_screw.py and diag_padim_agg.py reproduce both.",
+    "grid 68.3% and pill 59.0%: textures and small objects with low-contrast defects"
+  ],
+  "caveat": "8 of 15 categories run, not all of them; the mean is over these 8 and should not be quoted as 'MVTec-AD performance'."
 }

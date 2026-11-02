@@ -17,6 +17,20 @@ L3 vision: few-shot anomaly detection (synthetic parts)
     pending   8 and 16 normal samples had not finished within the per-call budget when this file was written; the trend that matters (2 normals already detects) is already visible
     caveat    the synthetic generator is separable by construction, so 100% here is a statement about the harness, not about MVTec. docs/GAPS.md says so.
 
+L3b vision on real data: MVTec-AD, pretrained ResNet-18 backbone (PaDiM)
+    measured  category       AUROC
+              bottle         99.8%
+              carpet         96.3%
+              toothbrush     91.7%
+              hazelnut       88.3%
+              metal_nut      77.6%
+              grid           68.3%
+              pill           59.0%
+              screw          51.8%
+    measured  mean over 8 of 15 categories: 79.1%   (paper: ~97.5% mean over all 15)
+    changed   same protocol with random features: bottle 75% -> 100%, screw 20% -> 52%, carpet 33% -> 96%
+    caveat    8 of 15 categories run, not all of them; the mean is over these 8 and should not be quoted as 'MVTec-AD performance'.
+
 L4 motion control: hand-written dynamics + feedforward
     measured  scenario                    ff=1.0    ff=0.0   ratio
               clean                        0.758    38.853   51.3x
@@ -26,6 +40,12 @@ L4 motion control: hand-written dynamics + feedforward
               all three                  258.935   260.259    1.0x
     reading   full inverse-dynamics feedforward reduces worst-case tracking error 51x against a CLEAN plant, and essentially not at all against backdriveable real-world effects: 1.1x with backlash, 1.0x with structural flex.
     caveat    backlash magnitude 0.05 deg is a typical harmonic-drive figure; at 3.2 m/s tip speed it dominates because the arm reverses direction 60 times a second at this trajectory. A slower trajectory would show a much smaller number. The comparison across rows is what matters, not the absolute mm.
+    measured  disturbance observer added on top -- and it does not work:
+              backlash only        no DOB   259.87 mm   with DOB   259.88 mm
+              flex only            no DOB    47.76 mm   with DOB    47.76 mm
+              friction asymmetry   no DOB     0.55 mm   with DOB     2.48 mm
+              all three            no DOB   258.94 mm   with DOB   259.94 mm
+    reading   A disturbance observer estimates a TORQUE. Backlash is not a torque error: inside the deadband the output does not move no matter what torque is applied, so the observer sees a large mismatch, integrates it, and applies more torque into the gap -- which produces overshoot the instant the gap is crossed. The flex mode is a state the observer's model does not have, and the observer's low-pass is slower than the mode. Both therefore come out at exactly 1.00x.
     measured  C++ self-test: 16 checks, 0 failures
 
 L5 timing -> error conversion (arithmetic, exact)

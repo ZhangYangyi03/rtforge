@@ -85,6 +85,13 @@ def _read_vision() -> dict | None:
     return json.load(open(path, encoding="utf-8"))
 
 
+def _read_mvtec() -> dict | None:
+    path = os.path.join(RESULTS, "mvtec.json")
+    if not os.path.exists(path):
+        return None
+    return json.load(open(path, encoding="utf-8"))
+
+
 def build_report() -> dict:
     b = budget_mod.table()
     return {
@@ -93,6 +100,7 @@ def build_report() -> dict:
         "build": _read_build(),
         "tracking": _read_tracking(),
         "vision": _read_vision(),
+        "mvtec": _read_mvtec(),
         "ptp": _ptp_rows(),
     }
 
@@ -153,6 +161,23 @@ def render(r: dict) -> str:
             out.append(f"    pending   {v['pending']}")
         out.append(f"    caveat    {v['caveat']}")
     out.append("")
+    out.append("L3b vision on real data: MVTec-AD, pretrained ResNet-18 backbone (PaDiM)")
+    m = r.get("mvtec")
+    if not m:
+        out.append("    absent    results/mvtec.json not found")
+    else:
+        out.append(f"    measured  {'category':<12}{'AUROC':>8}")
+        for row in m["results"]:
+            out.append(f"              {row['category']:<12}{row['auroc'] * 100:>7.1f}%")
+        out.append(f"    measured  mean over {len(m['results'])} of 15 categories: "
+                   f"{m['mean_over_8'] * 100:.1f}%   (paper: ~97.5% mean over all 15)")
+        prev = m["before"]
+        out.append(f"    changed   same protocol with random features: "
+                   f"bottle {prev['bottle'] * 100:.0f}% -> {m['results'][0]['auroc'] * 100:.0f}%, "
+                   f"screw {prev['screw'] * 100:.0f}% -> {[x for x in m['results'] if x['category'] == 'screw'][0]['auroc'] * 100:.0f}%, "
+                   f"carpet {prev['carpet'] * 100:.0f}% -> {[x for x in m['results'] if x['category'] == 'carpet'][0]['auroc'] * 100:.0f}%")
+        out.append(f"    caveat    {m['caveat']}")
+    out.append("")
     out.append("L4 motion control: hand-written dynamics + feedforward")
     t = r["tracking"]
     if t:
@@ -167,6 +192,13 @@ def render(r: dict) -> str:
                 out.append(f"    measured  feedforward {row['feedforward']:.1f} -> worst tracking error "
                            f"{row['worst_error_mm']:.3f} mm")
         out.append(f"    caveat    {t['caveat']}")
+        if "dob" in t:
+            d = t["dob"]
+            out.append("    measured  disturbance observer added on top -- and it does not work:")
+            for row in d["result"]:
+                out.append(f"              {row['scenario']:<20} no DOB {row['no_dob_mm']:>8.2f} mm"
+                           f"   with DOB {row['dob_5ms_mm']:>8.2f} mm")
+            out.append(f"    reading   {d['why_it_fails']}")
     else:
         out.append("    absent    results/tracking.json not found")
     bld = r["build"]

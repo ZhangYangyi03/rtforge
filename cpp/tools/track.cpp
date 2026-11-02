@@ -73,6 +73,7 @@ std::vector<double> solve2(const std::vector<std::vector<double>>& M,
 int main(int argc, char** argv) {
     double ff = 1.0, kp = 400.0, kd = 40.0, amplitude = 0.6, period = 1.0, duration = 4.0;
     Perturbation pert;
+    double dob_tau = 0.0;      // 0 = observer off; 0.005 = 5 ms low-pass
     const char* label = "ff1.0";
     for (int i = 1; i < argc; ++i) {
         if (!std::strcmp(argv[i], "--ff") && i + 1 < argc) { ff = std::atof(argv[++i]); label = "ff"; }
@@ -86,6 +87,7 @@ int main(int argc, char** argv) {
             pert.backlash_rad = std::atof(argv[++i]) * 3.141592653589793 / 180.0;
         else if (!std::strcmp(argv[i], "--flex-hz") && i + 1 < argc) pert.flex_hz = std::atof(argv[++i]);
         else if (!std::strcmp(argv[i], "--flex-gain") && i + 1 < argc) pert.flex_gain = std::atof(argv[++i]);
+        else if (!std::strcmp(argv[i], "--dob") && i + 1 < argc) dob_tau = std::atof(argv[++i]);
     }
     (void)label;
 
@@ -110,6 +112,22 @@ int main(int argc, char** argv) {
     const double dt = 1e-4;
     double backlash_state[2] = {s.q[0], s.q[1]};
     double flex_pos = 0.0, flex_vel = 0.0;
+
+    // ---- disturbance observer
+    //
+    // Feedforward cancels what the model contains. Everything the model does NOT contain --
+    // the deadband, the bending mode, friction that differs by direction -- shows up as a
+    // torque the plant applies that the controller never asked for. A disturbance observer
+    // estimates that torque from the mismatch between what the model predicts the arm
+    // should be doing and what the encoder says it is doing, and feeds the ESTIMATE back.
+    //
+    // This is the standard form: d_hat is a first-order low-pass of (measured acceleration
+    // minus model-implied acceleration) times the inertia, with time constant tau. tau is
+    // the whole design: fast enough to catch the deadband, slow enough not to chase sensor
+    // noise or to fight the controller's own bandwidth.
+    double d_hat[2] = {0.0, 0.0};
+    double dq_prev[2] = {s.dq[0], s.dq[1]};
+    double tau_cmd[2] = {0.0, 0.0};
     std::printf("t,q0_err,q1_err,x_err_mm,z_err_mm,ee_speed_mps\n");
     double worst_mm = 0.0, worst_speed = 0.0;
     for (double t = 0.0; t < duration; t += dt) {
@@ -130,6 +148,32 @@ int main(int argc, char** argv) {
                 extra[i] = base * sign * (1.0 + (sign > 0 ? pert.friction_asymmetry : 0.0));
             }
         }
+
+        // Measured acceleration from the encoder, one step behind.
+        double a_meas[2] = {(s.dq[0] - dq_prev[0]) / dt, (s.dq[1] - dq_prev[1]) / dt};
+        dq_prev[0] = s.dq[0];
+        dq_prev[1] = s.dq[1];
+
+        // What the model says the arm should be doing, given the torque that was ACTUALLY
+        // commanded last step -- tau_cmd, without d_hat in it. Including d_hat here (the
+        // first version did) makes the comparison self-referential: the model predicts
+        // using the same estimate the observer is trying to find, the mismatch is zero by
+        // construction, and the observer reports nothing while looking like it works.
+        auto a_model = solve2(M, {tau_cmd[0] - c[0] - g[0],
+                                  tau_cmd[1] - c[1] - g[1]});
+
+        if (dob_tau > 0.0) {
+            for (int i = 0; i < 2; ++i) {
+                // Mismatch in acceleration -> a torque via the inertia. Low-passed, then
+                // subtracted: the plant is doing something the model did not predict, so
+                // stop asking it to.
+                const double e = a_meas[i] - a_model[i];
+                d_hat[i] += (M[i][i] * e - d_hat[i]) * (dt / dob_tau);
+                tau[i] -= d_hat[i];
+            }
+        }
+        tau_cmd[0] = tau[0];
+        tau_cmd[1] = tau[1];
 
         auto acc = solve2(M, {tau[0] - c[0] - g[0] - extra[0],
                               tau[1] - c[1] - g[1] - extra[1]});
@@ -182,9 +226,10 @@ int main(int argc, char** argv) {
         }
     }
     std::fprintf(stderr, "ff=%.2f kp=%.0f kd=%.0f  worst tracking error %.3f mm  "
-                         "peak end-effector speed %.3f m/s%s%s%s\n", ff, kp, kd, worst_mm, worst_speed,
+                         "peak end-effector speed %.3f m/s%s%s%s%s\n", ff, kp, kd, worst_mm, worst_speed,
                  pert.friction_asymmetry ? " [friction-asym]" : "",
                  pert.backlash_rad ? " [backlash]" : "",
-                 pert.flex_hz ? " [flex]" : "");
+                 pert.flex_hz ? " [flex]" : "",
+                 dob_tau > 0.0 ? " [dob]" : "");
     return 0;
 }
