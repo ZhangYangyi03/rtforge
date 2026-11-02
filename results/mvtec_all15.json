@@ -98,10 +98,17 @@
       "n_normal": 19,
       "n_defect": 60,
       "auroc": 0.9885964912280701
+    },
+    {
+      "category": "zipper",
+      "n_train": 20,
+      "n_normal": 32,
+      "n_defect": 119,
+      "auroc": 0.881827731092437
     }
   ],
-  "mean": 0.8251687440364905,
-  "n_categories": 14,
+  "mean": 0.8289460098402203,
+  "n_categories": 15,
   "skipped": [],
   "reference": "PaDiM paper: ~97.5% mean image AUROC over all 15 categories"
 }

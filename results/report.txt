@@ -18,19 +18,17 @@ L3 vision: few-shot anomaly detection (synthetic parts)
     caveat    the synthetic generator is separable by construction, so 100% here is a statement about the harness, not about MVTec. docs/GAPS.md says so.
 
 L3b vision on real data: MVTec-AD, pretrained ResNet-18 backbone (PaDiM)
-    measured  category       AUROC
-              bottle         99.8%
-              carpet         96.3%
-              toothbrush     91.7%
-              hazelnut       88.3%
-              metal_nut      77.6%
-              grid           68.3%
-              pill           59.0%
-              screw          51.8%
-    measured  mean over 8 of 15 categories: 79.1%   (paper: ~97.5% mean over all 15)
-    changed   same protocol with random features: bottle 75% -> 100%, screw 20% -> 52%, carpet 33% -> 96%
-    caveat    8 of 15 categories run, not all of them; the mean is over these 8 and should not be quoted as 'MVTec-AD performance'.
-
+    measured  15 categories, ResNet-18 layer1/2/3, 100 channels, per-position diagonal Ga...
+              leather 99.9%   bottle 99.8%   wood 98.9%
+              carpet 96.3%   tile 95.7%   toothbrush 91.7%
+              hazelnut 88.3%   zipper 88.2%   transistor 82.4%
+              metal_nut 77.6%   capsule 74.2%   cable 71.3%
+              grid 68.3%   pill 59.0%   screw 51.8%
+    measured  mean 82.9%   (paper: ~97.5% mean over all 15)
+    measured  at a fixed 1% false-positive rate:
+              per-category threshold  mean recall 93.2%
+              ONE global threshold   mean recall 61.7%   (worst: grid 0.0%)
+    reading   the AUROC ordering and the deployed recall disagree: pill is near the bottom on AUROC and perfect at 1% FPR, while grid is unusable with a shared cutoff.
 L4 motion control: hand-written dynamics + feedforward
     measured  scenario                    ff=1.0    ff=0.0   ratio
               clean                        0.758    38.853   51.3x

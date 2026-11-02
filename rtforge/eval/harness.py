@@ -86,10 +86,23 @@ def _read_vision() -> dict | None:
 
 
 def _read_mvtec() -> dict | None:
-    path = os.path.join(RESULTS, "mvtec.json")
-    if not os.path.exists(path):
+    """All 15 categories if they have been benchmarked; the 8-category file otherwise."""
+    for name in ("mvtec_all15.json", "mvtec.json"):
+        path = os.path.join(RESULTS, name)
+        if os.path.exists(path):
+            d = json.load(open(path, encoding="utf-8"))
+            d["_source"] = name
+            return d
+    return None
+
+
+def _read_mvtec_thresholds() -> dict | None:
+    a = os.path.join(RESULTS, "mvtec_global_threshold.json")
+    b = os.path.join(RESULTS, "mvtec_threshold.json")
+    if not (os.path.exists(a) and os.path.exists(b)):
         return None
-    return json.load(open(path, encoding="utf-8"))
+    return {"global": json.load(open(a, encoding="utf-8")),
+            "per": json.load(open(b, encoding="utf-8"))}
 
 
 def build_report() -> dict:
@@ -101,6 +114,7 @@ def build_report() -> dict:
         "tracking": _read_tracking(),
         "vision": _read_vision(),
         "mvtec": _read_mvtec(),
+        "mvtec_thr": _read_mvtec_thresholds(),
         "ptp": _ptp_rows(),
     }
 
@@ -164,20 +178,34 @@ def render(r: dict) -> str:
     out.append("L3b vision on real data: MVTec-AD, pretrained ResNet-18 backbone (PaDiM)")
     m = r.get("mvtec")
     if not m:
-        out.append("    absent    results/mvtec.json not found")
+        out.append("    absent    no MVTec results on disk")
+    elif "_source" in m and m["_source"] == "mvtec_all15.json":
+        rows = sorted(m["rows"], key=lambda x: -x["auroc"])
+        out.append(f"    measured  {len(rows)} categories, {m['protocol'][:60]}...")
+        for k in range(0, len(rows), 3):
+            chunk = rows[k:k + 3]
+            out.append("              " + "   ".join(f"{x['category']} {x['auroc'] * 100:.1f}%"
+                                                     for x in chunk))
+        out.append(f"    measured  mean {m['mean'] * 100:.1f}%   (paper: ~97.5% mean over all 15)")
+        thr = r.get("mvtec_thr")
+        if thr:
+            g = thr["global"]["global"]["fpr_1"]
+            out.append(f"    measured  at a fixed 1% false-positive rate:")
+            out.append(f"              per-category threshold  mean recall "
+                       f"{thr['global']['per_category_mean_recall_at_1pct'] * 100:.1f}%")
+            worst = min(g["recall"], key=g["recall"].get)
+            out.append(f"              ONE global threshold   mean recall {g['mean_recall'] * 100:.1f}%"
+                       f"   (worst: {worst} {g['recall'][worst] * 100:.1f}%)")
+            out.append(f"    reading   the AUROC ordering and the deployed recall disagree: pill is "
+                       f"near the bottom on AUROC and perfect at 1% FPR, while grid is "
+                       f"unusable with a shared cutoff.")
     else:
         out.append(f"    measured  {'category':<12}{'AUROC':>8}")
-        for row in m["results"]:
+        for row in m.get("results", []):
             out.append(f"              {row['category']:<12}{row['auroc'] * 100:>7.1f}%")
-        out.append(f"    measured  mean over {len(m['results'])} of 15 categories: "
-                   f"{m['mean_over_8'] * 100:.1f}%   (paper: ~97.5% mean over all 15)")
-        prev = m["before"]
-        out.append(f"    changed   same protocol with random features: "
-                   f"bottle {prev['bottle'] * 100:.0f}% -> {m['results'][0]['auroc'] * 100:.0f}%, "
-                   f"screw {prev['screw'] * 100:.0f}% -> {[x for x in m['results'] if x['category'] == 'screw'][0]['auroc'] * 100:.0f}%, "
-                   f"carpet {prev['carpet'] * 100:.0f}% -> {[x for x in m['results'] if x['category'] == 'carpet'][0]['auroc'] * 100:.0f}%")
-        out.append(f"    caveat    {m['caveat']}")
-    out.append("")
+        out.append(f"    measured  mean over {len(m.get('results', []))} of 15 categories: "
+                   f"{m.get('mean_over_8', 0) * 100:.1f}%")
+        out.append(f"    caveat    {m.get('caveat', '')}")
     out.append("L4 motion control: hand-written dynamics + feedforward")
     t = r["tracking"]
     if t:
