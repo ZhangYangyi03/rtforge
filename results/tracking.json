@@ -1,0 +1,21 @@
+{
+  "note": "WSL2 Ubuntu, g++ 13.3 -O2, rtforge_track --duration 3 s on a 2-link planar arm, kp=400 kd=40, 1e-4 s integration",
+  "caveat": "plant and controller share the same model, so this measures the CONTROLLER, not the modelling gap. Real arms have unmodelled friction, backlash and flex; docs/GAPS.md lists them.",
+  "rows": [
+    {
+      "feedforward": 1.0,
+      "worst_error_mm": 0.758,
+      "peak_speed_mps": 3.206
+    },
+    {
+      "feedforward": 0.5,
+      "worst_error_mm": 19.443,
+      "peak_speed_mps": 3.3
+    },
+    {
+      "feedforward": 0.0,
+      "worst_error_mm": 38.853,
+      "peak_speed_mps": 3.402
+    }
+  ]
+}

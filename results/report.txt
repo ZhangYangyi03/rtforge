@@ -1,0 +1,33 @@
+rtforge -- every claim, its number, and where the number came from
+
+L1 real-time kernel
+    measured  4 configurations, worst thread of the worst run:
+              p50 43533 us   p99 144369 us   p99.9 146543 us   max 146543 us   (base)
+    budget    jitter target 68.5 us from the 1000 us cycle -> measured p99.9 MISSES it
+              (this host is WSL2, not a PREEMPT_RT kernel; see docs/GAPS.md)
+
+L2 deterministic network (IEEE 1588 model)
+    modelled  software timestamping, 100 us path     residual p99   3577 ns -> 2.2472 um contour
+    modelled  hardware TS, asymmetric switch         residual p99     36 ns -> 0.0225 um contour
+    modelled  hardware TS, symmetric path            residual p99     36 ns -> 0.0225 um contour
+
+L3 vision: few-shot anomaly detection (synthetic parts)
+    measured   2 normal samples -> detect 98.7% at 10% false alarm
+    measured   4 normal samples -> detect 100.0% at 10% false alarm
+    pending   8 and 16 normal samples had not finished within the per-call budget when this file was written; the trend that matters (2 normals already detects) is already visible
+    caveat    the synthetic generator is separable by construction, so 100% here is a statement about the harness, not about MVTec. docs/GAPS.md says so.
+
+L4 motion control: hand-written dynamics + feedforward
+    measured  feedforward 1.0 -> worst tracking error 0.758 mm at 3.21 m/s
+    measured  feedforward 0.5 -> worst tracking error 19.443 mm at 3.30 m/s
+    measured  feedforward 0.0 -> worst tracking error 38.853 mm at 3.40 m/s
+    caveat    plant and controller share the same model, so this measures the CONTROLLER, not the modelling gap. Real arms have unmodelled friction, backlash and flex; docs/GAPS.md lists them.
+    measured  C++ self-test: 16 checks, 0 failures
+
+L5 timing -> error conversion (arithmetic, exact)
+    derived   1us      of jitter at 1.0 m/s = 0.0010 mm at the tool
+    derived   10us     of jitter at 1.0 m/s = 0.0100 mm at the tool
+    derived   50us     of jitter at 1.0 m/s = 0.0500 mm at the tool
+    derived   100us    of jitter at 1.0 m/s = 0.1000 mm at the tool
+    derived   1000us   of jitter at 1.0 m/s = 1.0000 mm at the tool
+    derived   the vision chain takes 35.80 ms, during which the object moves 35.8 mm

@@ -1,0 +1,54 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pytest
+      - name: latency parser against a captured cyclictest run
+        run: python -m pytest tests -q
+      - name: the error budget computes and is self-consistent
+        run: python -m rtforge.budget
+      - name: the report runs end to end
+        run: python scripts/report.py
+
+  dynamics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build cpp/build -j
+      - name: self-test against closed forms and energy conservation
+        run: cpp/build/rtforge_selftest
+      - name: the feedforward sweep runs and worsens without feedforward
+        run: |
+          cpp/build/rtforge_track --ff 1.0 --duration 3 2>&1 >/dev/null | tee /tmp/full.txt
+          cpp/build/rtforge_track --ff 0.0 --duration 3 2>&1 >/dev/null | tee /tmp/none.txt
+          python - <<'EOF'
+          import re, sys
+          def worst(path):
+              return float(re.search(r"worst tracking error ([\d.]+)", open(path).read()).group(1))
+          full, none = worst("/tmp/full.txt"), worst("/tmp/none.txt")
+          print(f"with feedforward {full} mm, without {none} mm")
+          sys.exit(0 if full * 10 < none else 1)
+          EOF
+
+  realtime:
+    # Not a pass/fail gate: the runner is a shared VM, so its latency says nothing about a
+    # target board. This job exists to prove the collection script runs and to publish the
+    # histogram as an artifact, so the number in the README can be reproduced.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y rt-tests
+      - run: DURATION=20s LOAD=2 ./scripts/collect_latency.sh || true
+      - uses: actions/upload-artifact@v4
+        with: {name: cyclictest, path: results/cyclictest_*.hist}

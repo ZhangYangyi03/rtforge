@@ -1,0 +1,21 @@
+{
+  "note": "measured on this host, trials=5, threshold fixed at the 5% false-alarm point of the normal scores; defect set = scratch/stain/chip drawn by synthetic_part",
+  "rows": [
+    {
+      "normals": 2,
+      "detect_rate": 0.9867,
+      "min": 0.9333,
+      "max": 1.0,
+      "false_alarm": 0.1
+    },
+    {
+      "normals": 4,
+      "detect_rate": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "false_alarm": 0.1
+    }
+  ],
+  "pending": "8 and 16 normal samples had not finished within the per-call budget when this file was written; the trend that matters (2 normals already detects) is already visible",
+  "caveat": "the synthetic generator is separable by construction, so 100% here is a statement about the harness, not about MVTec. docs/GAPS.md says so."
+}
