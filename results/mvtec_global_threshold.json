@@ -1,0 +1,61 @@
+{
+  "global": {
+    "fpr_1": {
+      "threshold": 14.52687183809279,
+      "recall": {
+        "bottle": 0.9365079365079365,
+        "cable": 0.7934782608695652,
+        "capsule": 0.42201834862385323,
+        "carpet": 0.24719101123595505,
+        "grid": 0.0,
+        "hazelnut": 0.9142857142857143,
+        "leather": 0.5108695652173914,
+        "metal_nut": 0.5161290322580645,
+        "pill": 0.7943262411347518,
+        "screw": 0.8823529411764706,
+        "tile": 0.35714285714285715,
+        "toothbrush": 0.5666666666666667,
+        "transistor": 0.7,
+        "wood": 0.85
+      },
+      "mean_recall": 0.606497755365659
+    },
+    "fpr_5": {
+      "threshold": 12.453546245098115,
+      "recall": {
+        "bottle": 0.9841269841269841,
+        "cable": 0.967391304347826,
+        "capsule": 0.5137614678899083,
+        "carpet": 0.4943820224719101,
+        "grid": 0.0,
+        "hazelnut": 1.0,
+        "leather": 0.8152173913043478,
+        "metal_nut": 0.8172043010752689,
+        "pill": 0.9929078014184397,
+        "screw": 1.0,
+        "tile": 0.7023809523809523,
+        "toothbrush": 0.9,
+        "transistor": 0.925,
+        "wood": 0.9333333333333333
+      },
+      "mean_recall": 0.788978968453498
+    }
+  },
+  "per_category_mean_recall_at_1pct": 0.9268608130563746,
+  "categories": [
+    "bottle",
+    "cable",
+    "capsule",
+    "carpet",
+    "grid",
+    "hazelnut",
+    "leather",
+    "metal_nut",
+    "pill",
+    "screw",
+    "tile",
+    "toothbrush",
+    "transistor",
+    "wood"
+  ]
+}

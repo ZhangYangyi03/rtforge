@@ -59,9 +59,21 @@ def main(argv: list[str]) -> int:
 
     out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "results", "mvtec_all15.json")
+    # Accumulate: running five categories twice must not erase the ten that came before.
+    # Each run replaces the entries it measured and keeps the rest.
+    prior = {}
+    if os.path.exists(out):
+        for r_ in json.load(open(out, encoding="utf-8")).get("rows", []):
+            prior[r_["category"]] = r_
+    for r_ in rows:
+        prior[r_["category"]] = r_
+    merged = [prior[k] for k in sorted(prior)]
     json.dump({"protocol": "ResNet-18 layer1/2/3, 100 channels, per-position diagonal Gaussian, "
                            "q99 image score, 20 normal training images",
-               "rows": rows, "mean": mean, "weighted": weighted, "skipped": skipped,
+               "rows": merged,
+               "mean": sum(x["auroc"] for x in merged) / len(merged),
+               "n_categories": len(merged),
+               "skipped": skipped,
                "reference": "PaDiM paper: ~97.5% mean image AUROC over all 15 categories"},
               open(out, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
     print(f"  written to {out}")

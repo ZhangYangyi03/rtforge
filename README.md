@@ -35,7 +35,9 @@ Measured on this host (Windows 11 + WSL2 Ubuntu, 16 cores, g++ 13.3):
     L1 kernel    jitter vs a 1 kHz cycle budget        146543 us     MISSES (WSL2)
     L2 network   sync error -> contour error            36 ns -> 22 nm   modelled
     L3 vision    MVTec-AD, random features            bottle 75%, screw 20%, carpet 33%   FAILS
-    L3 vision    MVTec-AD, ResNet-18 backbone, 8 cats  99.8 / 96.3 / 51.8 ... mean 79.1%   measured
+    L3 vision    MVTec-AD, ResNet-18 backbone, 14 cats mean 82.5% (best 99.9, worst 51.8)   measured
+    L3 vision    fixed 1% FPR, per-category threshold   mean recall 92.7%                  measured
+    L3 vision    fixed 1% FPR, ONE global threshold     mean recall 60.6% (grid 0%)        measured
     L3 vision    synthetic parts, 2 normal samples     98.7% at 10% FA  measured
     L4 control   feedforward 1.0 vs 0.0, clean plant   0.758 vs 38.853 mm   measured
     L4 control   same, with backlash                  259.9 vs 273.8 mm    measured, 1.1x
@@ -63,7 +65,28 @@ ResNet-18, with layers 1/2/3 concatenated, 100 channels, per-position diagonal G
     bottle 99.8   carpet 96.3   toothbrush 91.7   hazelnut 88.3
     metal_nut 77.6   grid 68.3   pill 59.0   screw 51.8      mean 79.1%
 
-`results/mvtec.json` holds all of it, `rtforge/vision/padim.py` reproduces it, and the
+All 14 categories that could be extracted (zipper was still unpacking when this was written;
+its absence is stated rather than filled in):
+
+    leather 99.9  bottle 99.8  wood 98.9  carpet 96.3  tile 95.7  toothbrush 91.7
+    hazelnut 88.3  transistor 82.4  metal_nut 77.6  capsule 74.2  cable 71.3
+    grid 68.3  pill 59.0  screw 51.8          mean 82.5%   (paper: ~97.5% over 15)
+
+AUROC is not what a line sees. Holding the false-positive rate at 1% on the normal training
+images and reading the recall on the defects, the per-category picture is much better than
+the AUROC ordering suggests -- pill goes from 59.0% AUROC to 100% recall, because its normals
+are tightly clustered and its defects are far away:
+
+    per-category threshold, 1% FPR     mean recall 92.7%
+    ONE threshold for every category   mean recall 60.6%, worst grid 0.0%
+
+That second row is the finding worth keeping. A single global cutoff at 1% FPR means 0% of
+grid's defects are caught at all, because grid's normal scores sit below the pooled cutoff.
+The same method that looks like 82.5% AUROC is a quarter of a working system if deployed the
+way a line with several part types actually runs it. Both tables are in
+`results/mvtec_threshold.json` and `results/mvtec_global_threshold.json`.
+
+`results/mvtec_all15.json` holds all of it, `rtforge/vision/padim.py` reproduces it, and the
 scripts beside `diag_auroc.py` show why the aggregation and the resolution are not the reason
 screw stays at chance. The published PaDiM number is ~97.5% mean over all 15 categories; this
 is 79.1% over 8 of them, so it is a ceiling being approached, not matched, and the README does

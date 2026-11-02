@@ -2,6 +2,13 @@
   "protocol": "ResNet-18 layer1/2/3, 100 channels, per-position diagonal Gaussian, q99 image score, 20 normal training images",
   "rows": [
     {
+      "category": "bottle",
+      "n_train": 20,
+      "n_normal": 20,
+      "n_defect": 63,
+      "auroc": 0.9984126984126984
+    },
+    {
       "category": "cable",
       "n_train": 20,
       "n_normal": 58,
@@ -16,11 +23,53 @@
       "auroc": 0.741523733546071
     },
     {
+      "category": "carpet",
+      "n_train": 20,
+      "n_normal": 28,
+      "n_defect": 89,
+      "auroc": 0.9634831460674157
+    },
+    {
+      "category": "grid",
+      "n_train": 20,
+      "n_normal": 21,
+      "n_defect": 57,
+      "auroc": 0.683375104427736
+    },
+    {
+      "category": "hazelnut",
+      "n_train": 20,
+      "n_normal": 40,
+      "n_defect": 70,
+      "auroc": 0.8828571428571429
+    },
+    {
       "category": "leather",
       "n_train": 20,
       "n_normal": 32,
       "n_defect": 92,
       "auroc": 0.9989809782608695
+    },
+    {
+      "category": "metal_nut",
+      "n_train": 20,
+      "n_normal": 22,
+      "n_defect": 93,
+      "auroc": 0.7761485826001955
+    },
+    {
+      "category": "pill",
+      "n_train": 20,
+      "n_normal": 26,
+      "n_defect": 141,
+      "auroc": 0.5900163666121113
+    },
+    {
+      "category": "screw",
+      "n_train": 20,
+      "n_normal": 41,
+      "n_defect": 119,
+      "auroc": 0.5183439229350276
     },
     {
       "category": "tile",
@@ -30,15 +79,29 @@
       "auroc": 0.9567099567099567
     },
     {
+      "category": "toothbrush",
+      "n_train": 20,
+      "n_normal": 12,
+      "n_defect": 30,
+      "auroc": 0.9166666666666666
+    },
+    {
       "category": "transistor",
       "n_train": 20,
       "n_normal": 60,
       "n_defect": 40,
       "auroc": 0.8241666666666667
+    },
+    {
+      "category": "wood",
+      "n_train": 20,
+      "n_normal": 19,
+      "n_defect": 60,
+      "auroc": 0.9885964912280701
     }
   ],
-  "mean": 0.8468924589407608,
-  "weighted": 0.8395965484144411,
+  "mean": 0.8251687440364905,
+  "n_categories": 14,
   "skipped": [],
   "reference": "PaDiM paper: ~97.5% mean image AUROC over all 15 categories"
 }

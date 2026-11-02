@@ -1,0 +1,103 @@
+{
+  "per_category": [
+    {
+      "category": "bottle",
+      "thr_1pct": 10.357579927444467,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 10.105980539321905,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "cable",
+      "thr_1pct": 11.788474892616271,
+      "recall_at_1pct_fpr": 0.9782608695652174,
+      "thr_5pct": 11.305971188545229,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "capsule",
+      "thr_1pct": 13.796345278739931,
+      "recall_at_1pct_fpr": 0.45871559633027525,
+      "thr_5pct": 13.481072363853457,
+      "recall_at_5pct_fpr": 0.47706422018348627
+    },
+    {
+      "category": "carpet",
+      "thr_1pct": 7.57869718408585,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 7.538525669574744,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "grid",
+      "thr_1pct": 9.25608777713776,
+      "recall_at_1pct_fpr": 0.9824561403508771,
+      "thr_5pct": 9.182616505622866,
+      "recall_at_5pct_fpr": 0.9824561403508771
+    },
+    {
+      "category": "hazelnut",
+      "thr_1pct": 12.679074705123911,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 12.49873923301697,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "leather",
+      "thr_1pct": 8.302402478218077,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 7.50799723148346,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "metal_nut",
+      "thr_1pct": 11.689773361206054,
+      "recall_at_1pct_fpr": 0.8924731182795699,
+      "thr_5pct": 10.637770996093751,
+      "recall_at_5pct_fpr": 0.989247311827957
+    },
+    {
+      "category": "pill",
+      "thr_1pct": 11.53619111347199,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 11.416927018165593,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "screw",
+      "thr_1pct": 16.345613571643828,
+      "recall_at_1pct_fpr": 0.6974789915966386,
+      "thr_5pct": 15.403664095401766,
+      "recall_at_5pct_fpr": 0.7983193277310925
+    },
+    {
+      "category": "tile",
+      "thr_1pct": 9.279908792972565,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 9.26500397920609,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "toothbrush",
+      "thr_1pct": 10.627558981418627,
+      "recall_at_1pct_fpr": 0.9666666666666667,
+      "thr_5pct": 10.40750716447832,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "transistor",
+      "thr_1pct": 11.371583131313328,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 11.279790084362034,
+      "recall_at_5pct_fpr": 1.0
+    },
+    {
+      "category": "wood",
+      "thr_1pct": 9.210348717689515,
+      "recall_at_1pct_fpr": 1.0,
+      "thr_5pct": 9.051078686714174,
+      "recall_at_5pct_fpr": 1.0
+    }
+  ],
+  "note": "thresholds calibrated on normal TRAINING images; recall measured on the test split"
+}
