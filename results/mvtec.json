@@ -1,0 +1,27 @@
+{
+  "dataset": "MVTec-AD (5.03 GB, huggingface micguida1/mvtech_anomaly_detection), 15 categories extracted to /mnt/d/mvtec",
+  "method": "PaDiM-style per-position diagonal Gaussian over random-feature patches, 20 normal train images, 128x128 grayscale",
+  "measured": [
+    {
+      "category": "bottle",
+      "auroc": 0.753,
+      "auroc_mean_stat": 0.9,
+      "auroc_best_stat_q99": 0.97,
+      "auroc_aligned": 0.93
+    },
+    {
+      "category": "screw",
+      "auroc": null,
+      "auroc_mean_stat": 0.2,
+      "auroc_best_stat": 0.55
+    },
+    {
+      "category": "carpet",
+      "auroc": null,
+      "auroc_mean_stat": 0.33,
+      "auroc_best_stat": 0.4
+    }
+  ],
+  "reference": "PaDiM paper: ~97.5% image AUROC on MVTec-AD with a ResNet-18 backbone",
+  "verdict": "the random-feature embedder does not carry semantics; the gap to published results is structural, not tuning. Proven by diag_auroc.py (5 statistics) and diag_alignment.py (3 shift ranges)."
+}

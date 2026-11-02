@@ -53,7 +53,40 @@ class PatchEmbedder:
             out.append(max(0.0, s))       # ReLU
         return out
 
-    def patch_vectors(self, img: list[list[float]], stride: int = 4) -> list[list[float]]:
+    def patch_vectors(self, img, stride: int = 4):
+        """Patch embeddings for one image.
+
+        Uses numpy when it is importable and the pure-Python loop otherwise. The Python
+        path is the reference (it is what the tests pin); the numpy path exists because
+        the reference takes 2.2 s per 128x128 image, which makes even one MVTec category
+        an hour of waiting rather than a measurement.
+        """
+        try:
+            import numpy as np
+        except ImportError:
+            return self._patch_vectors_py(img, stride)
+        if not self.filters:
+            self._init_filters()
+        a = np.asarray(img, dtype=np.float64)
+        p = self.patch
+        h, w = a.shape
+        ys = range(0, h - p + 1, stride)
+        xs = range(0, w - p + 1, stride)
+        out = []
+        for k in self.filters:
+            kn = np.asarray(k, dtype=np.float64)
+            # Valid convolution by explicit accumulation over the kernel: 8x8 slices of a
+            # 128x128 image is 64 adds per filter, which vectorises better than a loop.
+            acc = np.zeros((h - p + 1, w - p + 1))
+            for dy in range(p):
+                for dx in range(p):
+                    acc += a[dy:dy + h - p + 1, dx:dx + w - p + 1] * kn[dy, dx]
+            out.append(np.maximum(acc, 0.0))
+        # out is [filter][y][x] -> [patch][filter]
+        stack = np.stack(out, axis=0)
+        return [stack[:, y, x].tolist() for y in ys for x in xs]
+
+    def _patch_vectors_py(self, img: list[list[float]], stride: int = 4) -> list[list[float]]:
         # One pass over each kernel, then sample on the stride. The naive version called
         # _convolve per patch and re-walked the whole kernel every time; on a 32x32 image
         # with 32 filters that is ~10x slower than needed and it showed up as a 400 s run.
@@ -100,9 +133,16 @@ class PatchEmbedder:
         return self
 
     def embed(self, vec: list[float]) -> list[float]:
-        c = [vec[i] - self.mean[i] for i in range(len(vec))]
-        return [sum(c[i] * self.projection[i][j] for i in range(len(c)))
-                for j in range(self.n_components)]
+        try:
+            import numpy as np
+        except ImportError:
+            c = [vec[i] - self.mean[i] for i in range(len(vec))]
+            return [sum(c[i] * self.projection[i][j] for i in range(len(c)))
+                    for j in range(self.n_components)]
+        if not hasattr(self, "_np_proj"):
+            self._np_mean = np.asarray(self.mean)
+            self._np_proj = np.asarray(self.projection)
+        return ((np.asarray(vec) - self._np_mean) @ self._np_proj).tolist()
 
 
 def synthetic_part(rng: random.Random, size: int = 32, defect: str | None = None
