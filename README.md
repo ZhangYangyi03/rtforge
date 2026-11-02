@@ -34,17 +34,32 @@ Measured on this host (Windows 11 + WSL2 Ubuntu, 16 cores, g++ 13.3):
     layer        claim                                  number        verdict
     L1 kernel    jitter vs a 1 kHz cycle budget        146543 us     MISSES (WSL2)
     L2 network   sync error -> contour error            36 ns -> 22 nm   modelled
-    L3 vision    2 normal samples -> defect detection   98.7% at 10% FA  measured
-    L4 control   feedforward 1.0 vs 0.0                0.758 vs 38.853 mm  measured
+    L3 vision    MVTec-AD, 20 normal images            bottle 90%, screw 20%, carpet 33%   FAILS
+    L3 vision    synthetic parts, 2 normal samples     98.7% at 10% FA  measured
+    L4 control   feedforward 1.0 vs 0.0, clean plant   0.758 vs 38.853 mm   measured
+    L4 control   same, with backlash                  259.9 vs 273.8 mm    measured, 1.1x
+    L4 control   same, with structural flex            47.8 vs 48.7 mm      measured, 1.0x
     L5 derived   1 us of jitter at 1 m/s               1 um at the tool
 
 The L1 row is the important one. On a virtualised host the worst-case latency is 146 ms
 against a 68.5 us budget: the design's real-time premise is not demonstrated by this
 machine and `docs/GAPS.md` says what would demonstrate it.
 
-The L4 row is the one that argues for taking the dynamics seriously: giving the controller
-the model it needs cuts worst-case tracking error by a factor of 51, with the gain schedule
-unchanged between the two runs.
+The L3 and L4 rows are the ones that changed after the data arrived.
+
+L3 on real data fails. The same method that detects a defect from two synthetic samples gets
+90% AUROC on bottle, 20% on screw and 33% on carpet -- below chance. Two experiments in
+`scripts/` establish that this is structural, not tuning: sweeping five aggregation
+statistics does not rescue it, and aligning every image to the training mean (+-3, +-6 and
++-12 px searches) moves bottle from 90 to 93 and leaves the other two flat. Random
+convolutional features carry no semantics; a pretrained backbone is what supplies them, and
+not pulling one in was a deliberate choice that turns out to cost the whole layer.
+
+L4 is the same story in a different shape. Feedforward buys a factor of 51 against a clean
+plant and a factor of 1.0 once the plant has a deadband or a bending mode: `tau = M ddq +
+C dq + g` cancels exactly what the model contains, and a deadband and a flex mode are not in
+the model. The honest version of "hand-written dynamics beats a PD follower" is therefore
+narrower than the first run suggested, and both runs are in `results/tracking.json`.
 
 ## The layers
 

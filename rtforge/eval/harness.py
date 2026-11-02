@@ -156,9 +156,16 @@ def render(r: dict) -> str:
     out.append("L4 motion control: hand-written dynamics + feedforward")
     t = r["tracking"]
     if t:
-        for row in t["rows"]:
-            out.append(f"    measured  feedforward {row['feedforward']:.1f} -> worst tracking error "
-                       f"{row['worst_error_mm']:.3f} mm at {row['peak_speed_mps']:.2f} m/s")
+        if "scenario" in t["rows"][0]:
+            out.append(f"    measured  {'scenario':<24}{'ff=1.0':>10}{'ff=0.0':>10}{'ratio':>8}")
+            for row in t["rows"]:
+                out.append(f"              {row['scenario']:<24}{row['feedforward_1.0_mm']:>10.3f}"
+                           f"{row['feedforward_0.0_mm']:>10.3f}{row['ratio']:>7.1f}x")
+            out.append(f"    reading   {t['headline']}")
+        else:
+            for row in t["rows"]:
+                out.append(f"    measured  feedforward {row['feedforward']:.1f} -> worst tracking error "
+                           f"{row['worst_error_mm']:.3f} mm")
         out.append(f"    caveat    {t['caveat']}")
     else:
         out.append("    absent    results/tracking.json not found")

@@ -1,21 +1,38 @@
 {
-  "note": "WSL2 Ubuntu, g++ 13.3 -O2, rtforge_track --duration 3 s on a 2-link planar arm, kp=400 kd=40, 1e-4 s integration",
-  "caveat": "plant and controller share the same model, so this measures the CONTROLLER, not the modelling gap. Real arms have unmodelled friction, backlash and flex; docs/GAPS.md lists them.",
+  "note": "WSL2, g++ 13.3 -O2, 3 s of a 2-link planar arm, kp=400 kd=40, dt=1e-4. Controller always uses the clean model; only the plant sees the perturbations.",
+  "headline": "full inverse-dynamics feedforward reduces worst-case tracking error 51x against a CLEAN plant, and essentially not at all against backdriveable real-world effects: 1.1x with backlash, 1.0x with structural flex.",
   "rows": [
     {
-      "feedforward": 1.0,
-      "worst_error_mm": 0.758,
-      "peak_speed_mps": 3.206
+      "scenario": "clean",
+      "feedforward_1.0_mm": 0.758,
+      "feedforward_0.0_mm": 38.853,
+      "ratio": 51.3
     },
     {
-      "feedforward": 0.5,
-      "worst_error_mm": 19.443,
-      "peak_speed_mps": 3.3
+      "scenario": "friction asymmetry 30%",
+      "feedforward_1.0_mm": 0.551,
+      "feedforward_0.0_mm": 38.711,
+      "ratio": 70.3
     },
     {
-      "feedforward": 0.0,
-      "worst_error_mm": 38.853,
-      "peak_speed_mps": 3.402
+      "scenario": "backlash 0.05 deg",
+      "feedforward_1.0_mm": 259.869,
+      "feedforward_0.0_mm": 273.824,
+      "ratio": 1.1
+    },
+    {
+      "scenario": "flex 2 Hz",
+      "feedforward_1.0_mm": 47.757,
+      "feedforward_0.0_mm": 48.67,
+      "ratio": 1.0
+    },
+    {
+      "scenario": "all three",
+      "feedforward_1.0_mm": 258.935,
+      "feedforward_0.0_mm": 260.259,
+      "ratio": 1.0
     }
-  ]
+  ],
+  "reading": "Feedforward cancels what the model contains. It cannot cancel a deadband (backlash) or a mode the model does not have (flex): those need either a stiffer mechanism or an observer that estimates the unmodelled state. The friction row is the one case where feedforward still helps, and it is the only perturbation the model has any term for at all.",
+  "caveat": "backlash magnitude 0.05 deg is a typical harmonic-drive figure; at 3.2 m/s tip speed it dominates because the arm reverses direction 60 times a second at this trajectory. A slower trajectory would show a much smaller number. The comparison across rows is what matters, not the absolute mm."
 }

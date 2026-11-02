@@ -18,10 +18,14 @@ L3 vision: few-shot anomaly detection (synthetic parts)
     caveat    the synthetic generator is separable by construction, so 100% here is a statement about the harness, not about MVTec. docs/GAPS.md says so.
 
 L4 motion control: hand-written dynamics + feedforward
-    measured  feedforward 1.0 -> worst tracking error 0.758 mm at 3.21 m/s
-    measured  feedforward 0.5 -> worst tracking error 19.443 mm at 3.30 m/s
-    measured  feedforward 0.0 -> worst tracking error 38.853 mm at 3.40 m/s
-    caveat    plant and controller share the same model, so this measures the CONTROLLER, not the modelling gap. Real arms have unmodelled friction, backlash and flex; docs/GAPS.md lists them.
+    measured  scenario                    ff=1.0    ff=0.0   ratio
+              clean                        0.758    38.853   51.3x
+              friction asymmetry 30%       0.551    38.711   70.3x
+              backlash 0.05 deg          259.869   273.824    1.1x
+              flex 2 Hz                   47.757    48.670    1.0x
+              all three                  258.935   260.259    1.0x
+    reading   full inverse-dynamics feedforward reduces worst-case tracking error 51x against a CLEAN plant, and essentially not at all against backdriveable real-world effects: 1.1x with backlash, 1.0x with structural flex.
+    caveat    backlash magnitude 0.05 deg is a typical harmonic-drive figure; at 3.2 m/s tip speed it dominates because the arm reverses direction 60 times a second at this trajectory. A slower trajectory would show a much smaller number. The comparison across rows is what matters, not the absolute mm.
     measured  C++ self-test: 16 checks, 0 failures
 
 L5 timing -> error conversion (arithmetic, exact)
