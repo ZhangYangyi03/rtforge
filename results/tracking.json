@@ -63,5 +63,58 @@
     "why_friction_got_worse": "Friction is the one case the observer can in principle see, and it still worsened 4.5x: the observer's torque is 5 ms behind, the trajectory reverses direction 60 times a second, so the correction is anti-phase about half the time. A faster observer would chase encoder quantisation instead.",
     "honest_conclusion": "On this plant, the disturbance observer is not a fix. What would be a fix, and is not implemented: a backlash-inverse model before the controller, or a stiffer joint. Both are mechanical/model changes, not control-loop changes.",
     "kept_because": "the code stays in the tree with the flag off by default, because a negative result that can be re-run is worth more than a removed experiment"
+  },
+  "backlash_inverse": {
+    "what": "a backlash-inverse block ahead of the controller: the motor command is held inside the gap instead of being pushed through it, and a stiff spring across the residual gap turns the error into torque",
+    "result": [
+      {
+        "scenario": "backlash only, no inverse",
+        "mm": 259.87
+      },
+      {
+        "scenario": "backlash only, inverse gain 2e3",
+        "mm": 62.73
+      },
+      {
+        "scenario": "backlash only, inverse gain 1e4",
+        "mm": 25.75
+      },
+      {
+        "scenario": "backlash only, inverse gain 1e5",
+        "mm": 7.68
+      },
+      {
+        "scenario": "backlash only, inverse gain 5e5",
+        "mm": 3.51
+      },
+      {
+        "scenario": "no backlash, inverse present (gain 5e5)",
+        "mm": 0.82
+      },
+      {
+        "scenario": "all three perturbations, no inverse",
+        "mm": 258.94
+      },
+      {
+        "scenario": "all three, inverse gain 2e5",
+        "mm": 60.35
+      },
+      {
+        "scenario": "all three, inverse + observer",
+        "mm": 60.35
+      },
+      {
+        "scenario": "gap estimated 0.03 for a real 0.05",
+        "mm": 5.2
+      },
+      {
+        "scenario": "gap estimated 0.07 for a real 0.05",
+        "mm": 5.69
+      }
+    ],
+    "reading": "259.87 mm -> 3.51 mm, a 74x reduction, from a model change rather than a control-loop change. This is the same lesson as the observer's failure, read the other way: the deadband was never a torque problem, so the fix was to stop commanding motion that cannot happen.",
+    "why_gain_keeps_helping": "the spring across the residual gap is a stiffness, so a stiffer one tracks tighter -- the limit is the 10 kHz integration step and the excitation it feeds, not a tuning optimum. Reported as a trend rather than a single best number.",
+    "robustness": "the real gap is 0.05 deg and the inverse was set to 0.03 and 0.07 (a 40% error either way): 5.20 mm and 5.69 mm against 5.45 mm for the exact value. Getting the gap wrong by 40% costs less than 5% of the tracking error, which is what makes this usable on hardware where the gap is measured, not given.",
+    "cost": "with no backlash in the plant at all, the inverse costs 0.758 -> 0.82 mm. Small, and stated because a fix that is free in simulation is rarely free in reality."
   }
 }

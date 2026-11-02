@@ -40,6 +40,7 @@ Measured on this host (Windows 11 + WSL2 Ubuntu, 16 cores, g++ 13.3):
     L4 control   feedforward 1.0 vs 0.0, clean plant   0.758 vs 38.853 mm   measured
     L4 control   same, with backlash                  259.9 vs 273.8 mm    measured, 1.1x
     L4 control   same, with structural flex            47.8 vs 48.7 mm      measured, 1.0x
+    L4 control   backlash with a backlash INVERSE      259.9 -> 3.51 mm      measured, 74x
     L5 derived   1 us of jitter at 1 m/s               1 um at the tool
 
 The L1 row is the important one. On a virtualised host the worst-case latency is 146 ms
@@ -73,6 +74,13 @@ plant and a factor of 1.0 once the plant has a deadband or a bending mode: `tau 
 C dq + g` cancels exactly what the model contains, and a deadband and a flex mode are not in
 the model. The honest version of "hand-written dynamics beats a PD follower" is therefore
 narrower than the first run suggested, and both runs are in `results/tracking.json`.
+
+The fix that does work is not in the control loop. A backlash-inverse block ahead of the
+controller holds the motor command inside the gap instead of driving through it, with a stiff
+spring across the residual error. That takes backlash from 259.87 mm to 3.51 mm, a factor of
+74, and it survives getting the gap wrong: with the real gap at 0.05 deg and the inverse set
+to 0.03 or 0.07, the error is 5.20 and 5.69 mm against 5.45 for the exact value. The cost,
+stated because it is not free, is 0.758 -> 0.82 mm on a plant that has no backlash at all.
 
 The obvious next fix -- a disturbance observer estimating the torque the plant applies that
 the model did not predict -- was implemented and measured, and it does not work here: exactly

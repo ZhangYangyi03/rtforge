@@ -1,0 +1,44 @@
+{
+  "protocol": "ResNet-18 layer1/2/3, 100 channels, per-position diagonal Gaussian, q99 image score, 20 normal training images",
+  "rows": [
+    {
+      "category": "cable",
+      "n_train": 20,
+      "n_normal": 58,
+      "n_defect": 92,
+      "auroc": 0.7130809595202399
+    },
+    {
+      "category": "capsule",
+      "n_train": 20,
+      "n_normal": 23,
+      "n_defect": 109,
+      "auroc": 0.741523733546071
+    },
+    {
+      "category": "leather",
+      "n_train": 20,
+      "n_normal": 32,
+      "n_defect": 92,
+      "auroc": 0.9989809782608695
+    },
+    {
+      "category": "tile",
+      "n_train": 20,
+      "n_normal": 33,
+      "n_defect": 84,
+      "auroc": 0.9567099567099567
+    },
+    {
+      "category": "transistor",
+      "n_train": 20,
+      "n_normal": 60,
+      "n_defect": 40,
+      "auroc": 0.8241666666666667
+    }
+  ],
+  "mean": 0.8468924589407608,
+  "weighted": 0.8395965484144411,
+  "skipped": [],
+  "reference": "PaDiM paper: ~97.5% mean image AUROC over all 15 categories"
+}

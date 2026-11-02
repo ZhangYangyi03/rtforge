@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
     double ff = 1.0, kp = 400.0, kd = 40.0, amplitude = 0.6, period = 1.0, duration = 4.0;
     Perturbation pert;
     double dob_tau = 0.0;      // 0 = observer off; 0.005 = 5 ms low-pass
+    double bl_inv_deg_arg = 0.0;   // 0 = no backlash inverse; 0.05 matches the plant's gap
+    double bl_gain_arg = 0.0;
     const char* label = "ff1.0";
     for (int i = 1; i < argc; ++i) {
         if (!std::strcmp(argv[i], "--ff") && i + 1 < argc) { ff = std::atof(argv[++i]); label = "ff"; }
@@ -88,6 +90,8 @@ int main(int argc, char** argv) {
         else if (!std::strcmp(argv[i], "--flex-hz") && i + 1 < argc) pert.flex_hz = std::atof(argv[++i]);
         else if (!std::strcmp(argv[i], "--flex-gain") && i + 1 < argc) pert.flex_gain = std::atof(argv[++i]);
         else if (!std::strcmp(argv[i], "--dob") && i + 1 < argc) dob_tau = std::atof(argv[++i]);
+        else if (!std::strcmp(argv[i], "--bl-inv-deg") && i + 1 < argc) bl_inv_deg_arg = std::atof(argv[++i]);
+        else if (!std::strcmp(argv[i], "--bl-gain") && i + 1 < argc) bl_gain_arg = std::atof(argv[++i]);
     }
     (void)label;
 
@@ -128,12 +132,40 @@ int main(int argc, char** argv) {
     double d_hat[2] = {0.0, 0.0};
     double dq_prev[2] = {s.dq[0], s.dq[1]};
     double tau_cmd[2] = {0.0, 0.0};
+    double bl_state[2] = {s.q[0], s.q[1]};
+    const double bl_inv_deg = bl_inv_deg_arg;
+    const double bl_gain = bl_gain_arg > 0.0 ? bl_gain_arg : 2000.0;
     std::printf("t,q0_err,q1_err,x_err_mm,z_err_mm,ee_speed_mps\n");
     double worst_mm = 0.0, worst_speed = 0.0;
     for (double t = 0.0; t < duration; t += dt) {
         auto ref = reference_at(t);
         // The controller sees the CLEAN model `r` and the measured state.
         auto tau = pd_control(r, s, ref, kp, kd, ff);
+
+        // ---- backlash inverse, ahead of the plant
+        //
+        // A deadband is not invertible at the point where the output stops (many inputs map
+        // to one output), so a proper inverse has to HOLD the command inside the deadband
+        // rather than push through it. That is what this does: the commanded motor angle is
+        // integrated; when the gap is open, the command advances normally; when the command
+        // would move less than the gap, it is held at the last released value until enough
+        // torque is applied to cross. The resulting torque is what the plant receives.
+        //
+        // The oscillator reports the residual error the controller must correct, which is
+        // why the observer after this block can do better than the bare model.
+        if (bl_inv_deg > 0.0) {
+            const double gap = bl_inv_deg * 3.141592653589793 / 180.0;
+            for (int i = 0; i < 2; ++i) {
+                const double want = ref.q_des[i] + (ref.q_des[i] - s.q[i]) * 0.0;  // tracked target
+                // Advance the virtual actuator: it can move at most the gap per correction.
+                const double err = want - bl_state[i];
+                if (std::fabs(err) > gap) {
+                    bl_state[i] += (err > 0 ? 1.0 : -1.0) * (std::fabs(err) - gap);
+                }
+                // Torque the residual gap requires: a stiff spring across the gap.
+                tau[i] += (bl_state[i] - s.q[i]) * bl_gain;
+            }
+        }
 
         // ---- plant: the same rigid body, plus whatever the model does not know about.
         auto M = mass_matrix(r, s.q);
@@ -226,10 +258,11 @@ int main(int argc, char** argv) {
         }
     }
     std::fprintf(stderr, "ff=%.2f kp=%.0f kd=%.0f  worst tracking error %.3f mm  "
-                         "peak end-effector speed %.3f m/s%s%s%s%s\n", ff, kp, kd, worst_mm, worst_speed,
+                         "peak end-effector speed %.3f m/s%s%s%s%s%s\n", ff, kp, kd, worst_mm, worst_speed,
                  pert.friction_asymmetry ? " [friction-asym]" : "",
                  pert.backlash_rad ? " [backlash]" : "",
                  pert.flex_hz ? " [flex]" : "",
-                 dob_tau > 0.0 ? " [dob]" : "");
+                 dob_tau > 0.0 ? " [dob]" : "",
+                 bl_inv_deg > 0.0 ? " [bl-inv]" : "");
     return 0;
 }
