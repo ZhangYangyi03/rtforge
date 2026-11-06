@@ -44,7 +44,7 @@ L4 motion control: hand-written dynamics + feedforward
               friction asymmetry   no DOB     0.55 mm   with DOB     2.48 mm
               all three            no DOB   258.94 mm   with DOB   259.94 mm
     reading   A disturbance observer estimates a TORQUE. Backlash is not a torque error: inside the deadband the output does not move no matter what torque is applied, so the observer sees a large mismatch, integrates it, and applies more torque into the gap -- which produces overshoot the instant the gap is crossed. The flex mode is a state the observer's model does not have, and the observer's low-pass is slower than the mode. Both therefore come out at exactly 1.00x.
-    measured  C++ self-test: 16 checks, 0 failures
+    absent    C++ self-test binary not built here (cmake -S cpp -B cpp/build && cmake --build cpp/build); the dynamics CI job runs it
 
 L5 timing -> error conversion (arithmetic, exact)
     derived   1us      of jitter at 1.0 m/s = 0.0010 mm at the tool

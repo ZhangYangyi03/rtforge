@@ -233,6 +233,14 @@ def render(r: dict) -> str:
     if bld["selftest"]:
         s = bld["selftest"]
         out.append(f"    measured  C++ self-test: {s.get('checks')} checks, {s.get('failures')} failures")
+    else:
+        # Always emit a line. Before this, the committed report.txt carried a
+        # "measured C++ self-test" line produced on a machine that had built
+        # cpp/build/rtforge_selftest, while a fresh clone (and CI) silently
+        # dropped it. An artefact that depends on local build state must say so.
+        out.append("    absent    C++ self-test binary not built here "
+                   "(cmake -S cpp -B cpp/build && cmake --build cpp/build); "
+                   "the dynamics CI job runs it")
     out.append("")
     out.append("L5 timing -> error conversion (arithmetic, exact)")
     for label, mm in b["jitter_to_error_mm"].items():

@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "rtforge: real-time industrial anomaly detection with an end-to-end report"
+authors:
+  - family-names: Zhang
+    given-names: Yangyi
+    affiliation: Georgetown University
+repository-code: "https://github.com/ZhangYangyi03/rtforge"
+license: Apache-2.0
+type: software
